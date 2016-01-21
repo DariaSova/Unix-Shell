@@ -6,6 +6,18 @@
 #include <string.h>
 
 
+void parseInputString(char *cmd, char **args)
+{
+  int i =0;
+  char *token;
+  token = strtok(cmd, " ");
+  while(token!=NULL)
+  {
+    args[i] = token;
+    i++;
+    token = strtok(NULL, " ");
+  }
+}
 int main ( void )
 {
 	for (;;)
@@ -15,15 +27,7 @@ int main ( void )
 
 
                 char** args = calloc(100, sizeof(char*));
-                int i =0;
-                char *token;
-                token = strtok(cmd, " ");
-                while(token!=NULL)
-                {
-                  args[i] = token;
-                  i++;
-                  token = strtok(NULL, " ");
-                }
+                parseInputString(cmd, args);
 
                 int pid= fork();              //fork child
 
