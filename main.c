@@ -1,13 +1,9 @@
-/*
- * main.c
- *
- * A simple program to illustrate the use of the GNU Readline library
- */
- 
 #include <stdio.h>
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <unistd.h>
+#include <string.h>
 
 
 int main ( void )
@@ -16,7 +12,31 @@ int main ( void )
 	{
 		char 	*cmd = readline ("shell>");
 		printf ("Got: [%s]\n", cmd);
-		
-		free (cmd);
-	}	
+
+
+                char** args = calloc(100, sizeof(char*));
+                int i =0;
+                char *token;
+                token = strtok(cmd, " ");
+                while(token!=NULL)
+                {
+                  args[i] = token;
+                  i++;
+                  token = strtok(NULL, " ");
+                }
+
+                int pid= fork();              //fork child
+
+                if(pid==0){               //Child
+                  execvp(args[0], args);
+                  printf( "Child process could not do execvp\n");
+
+                }else{                    //Parent
+                  wait(NULL);
+                  printf("Child exited\n");
+                }
+
+                free (cmd);
+                free (args);
+        }	
 }
