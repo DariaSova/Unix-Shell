@@ -5,17 +5,16 @@
 #include <unistd.h>
 #include <string.h>
 
-
-void parseInputString(char *cmd, char **args)
+void parseInputString(char *inputString, char **args, char* delimiter)
 {
   int i =0;
   char *token;
-  token = strtok(cmd, " \n");
+  token = strtok(inputString, delimiter);
   while(token!=NULL)
   {
     args[i] = token;
     i++;
-    token = strtok(NULL, " \n");
+    token = strtok(NULL, delimiter);
   }
 }
 
@@ -23,22 +22,22 @@ int main ( void )
 {
   for (;;)
   {
-    char 	*cmd = readline ("shell>");
+
+  char *buf=0;
+  char *data = getcwd(buf, 258);
+  char *current_dir=strcat(data,">shell>>");
+  char 	*cmd = readline (data);
+
     printf ("Got: [%s]\n", cmd);
 
     char** args = calloc(100, sizeof(char*));
-    parseInputString(cmd, args);
+    parseInputString(cmd, args, " \n");
 
     if(strcmp(args[0], "cd")==0)
     {
-      int ret = chdir(args[1]);
-      printf ("Directory: [%s]",args[1] );
-    } else if ( strcmp(args[0], "pwd")==0) {
-      char *buf;
-      char *data = getcwd(buf, 258);
-      printf("%s\n", data);
-      free(buf);
-    } else{
+        int ret = chdir(args[1]);
+        printf ("Directory: [%s]",args[1] );
+    } else {
       int pid= fork();              //fork child
 
       if(pid==0){               //Child
@@ -53,5 +52,6 @@ int main ( void )
 
     free (cmd);
     free (args);
+    free (current_dir);
   }
 }
