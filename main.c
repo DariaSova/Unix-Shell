@@ -20,8 +20,47 @@ void parseInputString(char *inputString, char **args, char* delimiter)
   }
 }
 
+void change_dir(char **args)
+{
+      //int ret = chdir(args[1]);
+      chdir(args[1]);
+      printf ("Directory: [%s]",args[1] );
+}
+
+char* get_cmd()
+{
+  char *buf=0;
+  char *data = getcwd(buf, 258);
+  strcat(data,">shell>>");
+  return readline (data);
+}
+
+void bg_list(struct bg_job *jobs_list, int counter)
+{
+  for(int i=0; i<counter, i++)
+  {
+    printf("%d:\t%s", i, jobs_list[i].command);
+  }
+}
+
+//void check_ch_process()
+//{
+//}
+
 int main ( void )
 {
+
+    struct bg_job
+    {
+      int pid;
+      char *command;
+    };
+
+    typedef struct bg_job BG_JOB;
+    BG_JOB bg_jobs[5];
+    //counter for gb jobs
+    int bgj_counter = 0;
+
   for (;;)
   {
 
@@ -35,24 +74,9 @@ int main ( void )
     }
     printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
     printf ("\nPID is %d\n",pid);
+    //check_ch_process();
+    char *cmd = get_cmd();
 
-    char *buf=0;
-    char *data = getcwd(buf, 258);
-    char *current_dir=strcat(data,">shell>>");
-    char 	*cmd = readline (data);
-
-    struct bg_job
-    {
-      int id;
-      int pid;
-      int terminated;
-      int paused;
-      char *command;
-    };
-
-    struct bg_job bg_jobs[5];
-    //counter for gb jobs
-    int bgj_counter = 0;
 
     printf ("Got: [%s]\n", cmd);
 
@@ -62,9 +86,7 @@ int main ( void )
 
     if(strcmp(args[0], "cd")==0)
     {
-      //int ret = chdir(args[1]);
-      chdir(args[1]);
-      printf ("Directory: [%s]",args[1] );
+      change_dir(args);
     } else {
 
       int pid= fork();              //fork child
@@ -72,16 +94,8 @@ int main ( void )
       if(pid==0){               //Child
         if(strcmp(args[0], "bg")==0)
         {
-          //WORKS!!!
-          //printf()
-          sleep(3);
-          //ADD STRUCT
-          //check the limit [5]
-          bgj_counter++;
-
-          //wait(NULL);
           execvp(args[1], &args[1]);
-          //exit(1);
+          exit(1);
         }
         else
         {
@@ -100,11 +114,23 @@ int main ( void )
         if(strcmp(args[0], "bg")!=0)
         {
           printf("[proc %d started]\n", pid);
-          //wait(NULL);
           waitpid(pid, NULL, 0);
         }
         else
         {
+          //check the limit [5]
+          if(bgj_counter<4)
+          {
+            bg_jobs[bgj_counter].pid = pid;
+            bg_jobs[bgj_counter++].command = args[1];
+
+          }
+          else
+          {
+            printf("\nSoryy, you can not run more than 5 jobs on the background..");
+            //run the 6th on the fg
+            waitpid(pid, NULL, 0);
+          }
           printf("[BG proc %d started]\n", pid);
 
           if (WIFEXITED(status)) {
@@ -122,6 +148,6 @@ int main ( void )
 
     free (cmd);
     free (args);
-    free (current_dir);
   }
+  free(bg_jobs);
 }
