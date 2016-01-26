@@ -4,6 +4,8 @@
 #include <readline/history.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 void parseInputString(char *inputString, char **args, char* delimiter)
 {
@@ -23,30 +25,98 @@ int main ( void )
   for (;;)
   {
 
-  char *buf=0;
-  char *data = getcwd(buf, 258);
-  char *current_dir=strcat(data,">shell>>");
-  char 	*cmd = readline (data);
+    int status=0;
+    pid_t pid;
+
+    while((pid = waitpid(-1, &status, WNOHANG))>0)
+    {
+      printf ("\nChild is DONE");
+      printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
+    }
+    printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
+    printf ("\nPID is %d\n",pid);
+
+    char *buf=0;
+    char *data = getcwd(buf, 258);
+    char *current_dir=strcat(data,">shell>>");
+    char 	*cmd = readline (data);
+
+    struct bg_job
+    {
+      int id;
+      int pid;
+      int terminated;
+      int paused;
+      char *command;
+    };
+
+    struct bg_job bg_jobs[5];
+    //counter for gb jobs
+    int bgj_counter = 0;
 
     printf ("Got: [%s]\n", cmd);
 
     char** args = calloc(100, sizeof(char*));
     parseInputString(cmd, args, " \n");
 
+
     if(strcmp(args[0], "cd")==0)
     {
-        int ret = chdir(args[1]);
-        printf ("Directory: [%s]",args[1] );
+      //int ret = chdir(args[1]);
+      chdir(args[1]);
+      printf ("Directory: [%s]",args[1] );
     } else {
+
       int pid= fork();              //fork child
 
       if(pid==0){               //Child
-        execvp(args[0], args);
-        printf( "Child process could not do execvp\n");
+        if(strcmp(args[0], "bg")==0)
+        {
+          //WORKS!!!
+          //printf()
+          sleep(3);
+          //ADD STRUCT
+          //check the limit [5]
+          bgj_counter++;
 
-      } else {                    //Parent
-        wait(NULL);
-        printf("Child exited\n");
+          //wait(NULL);
+          execvp(args[1], &args[1]);
+          //exit(1);
+        }
+        else
+        {
+          execvp(args[0], args);
+          printf( "Child process could not do execvp\n");
+          exit(1);
+        }
+      } else if (pid<0){
+        printf( "Forking failed...\n");
+      }
+
+
+
+      else {                    //Parent
+
+        if(strcmp(args[0], "bg")!=0)
+        {
+          printf("[proc %d started]\n", pid);
+          //wait(NULL);
+          waitpid(pid, NULL, 0);
+        }
+        else
+        {
+          printf("[BG proc %d started]\n", pid);
+
+          if (WIFEXITED(status)) {
+            printf("exited, status=%d\n", WEXITSTATUS(status));
+          } else if (WIFSIGNALED(status)) {
+            printf("killed by signal %d\n", WTERMSIG(status));
+          } else if (WIFSTOPPED(status)) {
+            printf("stopped by signal %d\n", WSTOPSIG(status));
+          } else if (WIFCONTINUED(status)) {
+            printf("continued\n");
+          }
+        }
       }
     }
 
