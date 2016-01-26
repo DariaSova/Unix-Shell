@@ -35,13 +35,16 @@ char* get_cmd()
   return readline (data);
 }
 
-void bg_list(struct bg_job *jobs_list, int counter)
-{
-  for(int i=0; i<counter, i++)
-  {
-    printf("%d:\t%s", i, jobs_list[i].command);
-  }
-}
+//void bg_list(struct bg_job* jobs_list, int n)
+//{
+//  for(int i=0; i<n; i++)
+//  {
+//    if(jobs_list[i]!=NULL)
+//    {
+//      printf("%d:\t%s", i, jobs_list[i].command);
+//    }
+//  }
+//}
 
 //void check_ch_process()
 //{
@@ -57,7 +60,7 @@ int main ( void )
     };
 
     typedef struct bg_job BG_JOB;
-    BG_JOB bg_jobs[5];
+    BG_JOB jobs_list[5];
     //counter for gb jobs
     int bgj_counter = 0;
 
@@ -73,7 +76,7 @@ int main ( void )
       printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
     }
     printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
-    printf ("\nPID is %d\n",pid);
+    //printf ("\nPID is %d\n",pid);
     //check_ch_process();
     char *cmd = get_cmd();
 
@@ -87,7 +90,18 @@ int main ( void )
     if(strcmp(args[0], "cd")==0)
     {
       change_dir(args);
-    } else {
+    }
+    else if(strcmp(args[0], "bglist")==0)
+    {
+      for(int i=0; i<5; i++)
+      {
+        if(jobs_list[i].command!=NULL)
+        {
+          printf("%d:\t%s\n", i, jobs_list[i].command);
+        }
+      }
+    }
+    else {
 
       int pid= fork();              //fork child
 
@@ -121,8 +135,8 @@ int main ( void )
           //check the limit [5]
           if(bgj_counter<4)
           {
-            bg_jobs[bgj_counter].pid = pid;
-            bg_jobs[bgj_counter++].command = args[1];
+            jobs_list[bgj_counter].pid = pid;
+            jobs_list[bgj_counter++].command = args[1];
 
           }
           else
@@ -131,7 +145,7 @@ int main ( void )
             //run the 6th on the fg
             waitpid(pid, NULL, 0);
           }
-          printf("[BG proc %d started]\n", pid);
+          // printf("[BG proc %d started]\n", pid);
 
           if (WIFEXITED(status)) {
             printf("exited, status=%d\n", WEXITSTATUS(status));
@@ -149,5 +163,5 @@ int main ( void )
     free (cmd);
     free (args);
   }
-  free(bg_jobs);
+  free(jobs_list);
 }
