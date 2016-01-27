@@ -6,6 +6,8 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <signal.h>
+
 
 void parseInputString(char *inputString, char **args, char* delimiter)
 {
@@ -76,10 +78,20 @@ int main ( void )
     int status=0;
     pid_t pid;
 
-    if((pid = waitpid(-1, &status, WNOHANG))>0)
+    while((pid = waitpid(-1, &status, WNOHANG))>0)
     {
+      if (WIFSIGNALED(status)) {
+              printf("killed by signal %d\n", WTERMSIG(status));
+      }
+      else
+      {
+
       printf ("\nChild is DONE");
       printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
+      bgj_counter--;
+
+      }
+      //minus if the process wa not killed
 
       int i=0;
       while(jobs_list[i].pid!=pid)
@@ -87,7 +99,6 @@ int main ( void )
         i++;
       }
       jobs_list[i].command=NULL;
-      bgj_counter--;
     }
 
     //printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
@@ -114,6 +125,23 @@ int main ( void )
         }
       }
       printf("Total Background jobs: %d\n", bgj_counter);
+    }
+    else if (strcmp(args[0], "bgkill")==0)
+    {
+      int kill_id = atoi(args[1]); 
+      int kill_pid = jobs_list[kill_id].pid;
+      int ret = kill(kill_pid, SIGTERM);
+
+      if(ret==0)
+      {
+        jobs_list[kill_id].command =NULL;
+       bgj_counter--;
+        printf("KILLED!!");
+      }
+      else if(ret==-1)
+      {
+        printf("Fck no...!!");
+      }
     }
     else {
       printf("Forking!!!!");
