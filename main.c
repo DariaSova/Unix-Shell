@@ -76,20 +76,18 @@ int main ( void )
     int status=0;
     pid_t pid;
 
-    while((pid = waitpid(-1, &status, WNOHANG))>0)
+    if((pid = waitpid(-1, &status, WNOHANG))>0)
     {
       printf ("\nChild is DONE");
       printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
-      if(pid>0)
+
+      int i=0;
+      while(jobs_list[i].pid!=pid)
       {
-        int i=0;
-        while(jobs_list[i].pid!=pid)
-        {
-          i++;
-        }
-        jobs_list[i].command=NULL;
-        bgj_counter--;
+        i++;
       }
+      jobs_list[i].command=NULL;
+      bgj_counter--;
     }
 
     //printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
@@ -142,12 +140,17 @@ int main ( void )
             //check the limit of gb jobs [5]
             if(bgj_counter < MAX_JOBS_NUMBER)
             {
+              int i=0;
+              while(jobs_list[i].command!=NULL&&i<MAX_JOBS_NUMBER)
+              {
+                i++;
+              }
               //allocate when initialize
-              jobs_list[bgj_counter].command = calloc(100, sizeof(char*));
+              jobs_list[i].command = calloc(100, sizeof(char*));
               //find an empty slot in the array
               //jobs_list[bgj_counter].terminated=0;
-              jobs_list[bgj_counter].pid = ch_pid;
-              strcpy(jobs_list[bgj_counter].command, args[1]);
+              jobs_list[i].pid = ch_pid;
+              strcpy(jobs_list[i].command, args[1]);
               bgj_counter++;
             } else
             {
