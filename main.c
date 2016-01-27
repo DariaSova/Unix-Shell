@@ -9,6 +9,16 @@
 #include <signal.h>
 
 
+struct Bg_job
+{
+  int pid;
+  int running;
+  char *command;
+};
+
+typedef struct Bg_job BG_JOB;
+int MAX_JOBS_NUMBER=5;
+
 void parseInputString(char *inputString, char **args, char* delimiter)
 {
   int i =0;
@@ -24,9 +34,9 @@ void parseInputString(char *inputString, char **args, char* delimiter)
 
 void change_dir(char **args)
 {
-      //int ret = chdir(args[1]);
-      chdir(args[1]);
-      printf ("Directory: [%s]",args[1] );
+  //int ret = chdir(args[1]);
+  chdir(args[1]);
+  printf ("Directory: [%s]",args[1] );
 }
 
 char* get_cmd()
@@ -37,40 +47,82 @@ char* get_cmd()
   return readline (data);
 }
 
-//void bg_list(struct bg_job* jobs_list, int n)
-//{
-//  for(int i=0; i<n; i++)
-//  {
-//    if(jobs_list[i]!=NULL)
-//    {
-//      printf("%d:\t%s", i, jobs_list[i].command);
-//    }
-//  }
-//}
+void bg_list(struct Bg_job *jobs_list, int counter)
+{
+  for(int i=0; i<MAX_JOBS_NUMBER; i++)
+  {
+    if(jobs_list[i].command!=NULL)
+    {
+      printf("%d:\t[%d]%s\n", i, jobs_list[i].running, jobs_list[i].command);
+    }
+  }
+  printf("Total Background jobs: %d\n", counter);
+}
 
+void initialize_jobs(struct Bg_job *jobs_list)
+{
+  for(int i=0; i<MAX_JOBS_NUMBER; i++)
+  {
+    jobs_list[i].command=NULL;
+  }
+}
+
+int kill_bg(struct Bg_job *jobs_list, char args, int bgj_counter)
+{
+  int kill_id = atoi(&args); 
+  int kill_pid = jobs_list[kill_id].pid;
+  int ret = kill(kill_pid, SIGTERM);
+
+  if(ret==0)
+  {
+    jobs_list[kill_id].command =NULL;
+    bgj_counter--;
+    printf("KILLED!!");
+  }
+  else if(ret==-1)
+  {
+    printf("Fck no...!!");
+  }
+  return bgj_counter;
+}
+
+void stop_bg(struct Bg_job *jobs_list, char args)
+{
+  int job_id = atoi(&args);
+  int job_pid = jobs_list[job_id].pid;
+  int ret = kill(job_pid, SIGSTOP);
+  printf("Signal was STOPPED?: %d", ret);
+
+  if(ret==0)
+  {
+    jobs_list[job_id].running = 0;
+    printf("\nSTOPPED: %d\n", job_id);
+  }
+}
+
+void start_bg(struct Bg_job *jobs_list, char args)
+{
+  int job_id = atoi(&args);
+  int job_pid = jobs_list[job_id].pid;
+  int ret = kill(job_pid, SIGCONT);
+  printf("Signal was RESUMED?: %d", ret);
+
+  if(ret==0)
+  {
+    jobs_list[job_id].running = 1;
+    printf("\nRESUMED: %d\n", job_id);
+  }
+}
 //void check_ch_process()
 //{
 //}
 
 int main ( void )
 {
-  int MAX_JOBS_NUMBER=5;
-  struct bg_job
-  {
-    int pid;
-    int terminated;
-    char *command;
-  };
-
-  typedef struct bg_job BG_JOB;
   BG_JOB jobs_list[MAX_JOBS_NUMBER];
   //counter for gb jobs
   int bgj_counter = 0;
-
-  for(int i=0; i<MAX_JOBS_NUMBER; i++)
-  {
-    jobs_list[i].command=NULL;
-  }
+  initialize_jobs(jobs_list);
 
   for (;;)
   {
@@ -81,17 +133,14 @@ int main ( void )
     while((pid = waitpid(-1, &status, WNOHANG))>0)
     {
       if (WIFSIGNALED(status)) {
-              printf("killed by signal %d\n", WTERMSIG(status));
+        printf("killed by signal %d\n", WTERMSIG(status));
       }
       else
       {
-
-      printf ("\nChild is DONE");
-      printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
-      bgj_counter--;
-
+        printf ("\nChild is DONE");
+        printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
+        bgj_counter--;
       }
-      //minus if the process wa not killed
 
       int i=0;
       while(jobs_list[i].pid!=pid)
@@ -101,9 +150,7 @@ int main ( void )
       jobs_list[i].command=NULL;
     }
 
-    //printf ("\nStatus pid %d", waitpid(-1, &status, WNOHANG));
-    //printf ("\nPID is %d\n",pid);
-    //check_ch_process();
+    //prompt - get user's input
     char *cmd = get_cmd();
     printf ("Got: [%s]\n", cmd);
 
@@ -117,34 +164,21 @@ int main ( void )
     else if(strcmp(args[0], "bglist")==0)
     {
       //print current bg jobs
-      for(int i=0; i<MAX_JOBS_NUMBER; i++)
-      {
-        if(jobs_list[i].command!=NULL)
-        {
-          printf("%d:\t%s\n", i, jobs_list[i].command);
-        }
-      }
-      printf("Total Background jobs: %d\n", bgj_counter);
+      bg_list(jobs_list, bgj_counter);
     }
     else if (strcmp(args[0], "bgkill")==0)
     {
-      int kill_id = atoi(args[1]); 
-      int kill_pid = jobs_list[kill_id].pid;
-      int ret = kill(kill_pid, SIGTERM);
+      //kill a bg job
+      bgj_counter = kill_bg(jobs_list, *args[1], bgj_counter);
+    } else if(strcmp(args[0], "stop")==0)
+    {
+      stop_bg(jobs_list, *args[1]);
 
-      if(ret==0)
-      {
-        jobs_list[kill_id].command =NULL;
-       bgj_counter--;
-        printf("KILLED!!");
-      }
-      else if(ret==-1)
-      {
-        printf("Fck no...!!");
-      }
+    } else if(strcmp(args[0], "start")==0)
+    {
+      start_bg(jobs_list, *args[1]);
     }
     else {
-      printf("Forking!!!!");
       int ch_pid= fork();              //fork child
       if(ch_pid >=0)
       {
@@ -178,6 +212,7 @@ int main ( void )
               //find an empty slot in the array
               //jobs_list[bgj_counter].terminated=0;
               jobs_list[i].pid = ch_pid;
+              jobs_list[i].running = 1;
               strcpy(jobs_list[i].command, args[1]);
               bgj_counter++;
             } else
@@ -185,16 +220,6 @@ int main ( void )
               printf("\nSoryy, you can not run more than 5 jobs on the background..");
               //run the 6th on the fg
               waitpid(pid, NULL, 0);
-            }
-            // printf("[BG proc %d started]\n", pid);
-            if (WIFEXITED(status)) {
-              printf("exited, status=%d\n", WEXITSTATUS(status));
-            } else if (WIFSIGNALED(status)) {
-              printf("killed by signal %d\n", WTERMSIG(status));
-            } else if (WIFSTOPPED(status)) {
-              printf("stopped by signal %d\n", WSTOPSIG(status));
-            } else if (WIFCONTINUED(status)) {
-              printf("continued\n");
             }
           } else
           {
