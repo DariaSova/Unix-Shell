@@ -12,7 +12,7 @@
 struct Bg_job
 {
   int pid;
-  int running;
+  char *status;
   char *command;
 };
 
@@ -53,7 +53,7 @@ void bg_list(struct Bg_job *jobs_list, int counter)
   {
     if(jobs_list[i].command!=NULL)
     {
-      printf("%d:\t[%d]%s\n", i, jobs_list[i].running, jobs_list[i].command);
+      printf("%d:\t[%s]%s\n", i, jobs_list[i].status, jobs_list[i].command);
     }
   }
   printf("Total Background jobs: %d\n", counter);
@@ -95,7 +95,7 @@ void stop_bg(struct Bg_job *jobs_list, char args)
 
   if(ret==0)
   {
-    jobs_list[job_id].running = 0;
+    jobs_list[job_id].status= "S";
     printf("\nSTOPPED: %d\n", job_id);
   }
 }
@@ -109,7 +109,7 @@ void start_bg(struct Bg_job *jobs_list, char args)
 
   if(ret==0)
   {
-    jobs_list[job_id].running = 1;
+    jobs_list[job_id].status= "R";
     printf("\nRESUMED: %d\n", job_id);
   }
 }
@@ -212,7 +212,7 @@ int main ( void )
               //find an empty slot in the array
               //jobs_list[bgj_counter].terminated=0;
               jobs_list[i].pid = ch_pid;
-              jobs_list[i].running = 1;
+              jobs_list[i].status = "R";
               strcpy(jobs_list[i].command, args[1]);
               bgj_counter++;
             } else
