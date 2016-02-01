@@ -19,7 +19,7 @@ struct Bg_job
 typedef struct Bg_job BG_JOB;
 int MAX_JOBS_NUMBER=5;
 
-void parseInputString(char *inputString, char **args, char* delimiter)
+int parseInputString(char *inputString, char **args, char* delimiter)
 {
   int i =0;
   char *token;
@@ -30,11 +30,20 @@ void parseInputString(char *inputString, char **args, char* delimiter)
     i++;
     token = strtok(NULL, delimiter);
   }
+  return i-1;
 }
 
-void change_dir(char **args)
+void change_dir(char **args, int params)
 {
-  int ret = chdir(args[1]);
+  int ret = -1;
+  if(params==0 || strcmp(args[1],"~")==0)
+  {
+    ret = chdir(getenv("HOME"));
+  }
+  else
+  {
+    ret = chdir(args[1]);
+  }
   if(ret==-1)
   {
     printf ("Sorry, directory [%s] does not exist\n", args[1] );
@@ -44,7 +53,7 @@ void change_dir(char **args)
 char* get_cmd()
 {
   char *buf=0;
-  char *data = getcwd(buf, 258);
+  char *data = getcwd(buf, 256);
   strcat(data,":shell>>");
   return readline (data);
 }
@@ -55,7 +64,7 @@ void bg_list(struct Bg_job *jobs_list, int counter)
   {
     if(jobs_list[i].command!=NULL)
     {
-      printf("%d:\t[%s]%s\n", i, jobs_list[i].status, jobs_list[i].command);
+      printf("%d[%s]:\t%s\n", i, jobs_list[i].status, jobs_list[i].command);
     }
   }
   printf("Total Background jobs: %d\n", counter);
@@ -154,6 +163,7 @@ int main ( void )
       jobs_list[i].command=NULL;
     }
 
+    int params_number =0;
     //prompt - get user's input
     char *cmd = get_cmd();
     while(strcmp(cmd, "")==0)
@@ -161,16 +171,13 @@ int main ( void )
       printf("No command was entered\n");
       cmd = get_cmd();
     }
-    //if(strcpy(cmd, "")==0)
-    //{
-    //  printf(":(!!!!!!!");
-    //}
+
     char** args = calloc(100, sizeof(char*));
-    parseInputString(cmd, args, " \n");
+    params_number = parseInputString(cmd, args, " \n");
 
     if(strcmp(args[0], "cd")==0)
     {
-      change_dir(args);
+      change_dir(args, params_number);
     }
     else if(strcmp(args[0], "bglist")==0)
     {
