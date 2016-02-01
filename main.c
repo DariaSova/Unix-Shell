@@ -34,16 +34,18 @@ void parseInputString(char *inputString, char **args, char* delimiter)
 
 void change_dir(char **args)
 {
-  //int ret = chdir(args[1]);
-  chdir(args[1]);
-  printf ("Directory: [%s]",args[1] );
+  int ret = chdir(args[1]);
+  if(ret==-1)
+  {
+    printf ("Sorry, directory [%s] does not exist\n", args[1] );
+  }
 }
 
 char* get_cmd()
 {
   char *buf=0;
   char *data = getcwd(buf, 258);
-  strcat(data,">shell>>");
+  strcat(data,":shell>>");
   return readline (data);
 }
 
@@ -77,11 +79,11 @@ int kill_bg(struct Bg_job *jobs_list, char args, int bgj_counter)
   {
     jobs_list[kill_id].command =NULL;
     bgj_counter--;
-    printf("KILLED!!");
+    printf("Process %d was successfully terminated\n", kill_id);
   }
   else if(ret==-1)
   {
-    printf("Fck no...!!");
+    printf("Error: the process could not be terminated\n");
   }
   return bgj_counter;
 }
@@ -91,12 +93,15 @@ void stop_bg(struct Bg_job *jobs_list, char args)
   int job_id = atoi(&args);
   int job_pid = jobs_list[job_id].pid;
   int ret = kill(job_pid, SIGSTOP);
-  printf("Signal was STOPPED?: %d", ret);
 
   if(ret==0)
   {
     jobs_list[job_id].status= "S";
-    printf("\nSTOPPED: %d\n", job_id);
+    printf("\nProcess %d\n was stopped\n", job_id);
+  }
+  else
+  {
+    printf("\nError: process %d\n could not be stopped\n", job_id);
   }
 }
 
@@ -105,17 +110,17 @@ void start_bg(struct Bg_job *jobs_list, char args)
   int job_id = atoi(&args);
   int job_pid = jobs_list[job_id].pid;
   int ret = kill(job_pid, SIGCONT);
-  printf("Signal was RESUMED?: %d", ret);
 
   if(ret==0)
   {
     jobs_list[job_id].status= "R";
-    printf("\nRESUMED: %d\n", job_id);
+    printf("Process %d is now running\n", job_id);
+  }
+  else
+  {
+    printf("Error: process %d could not be resumed\n", job_id);
   }
 }
-//void check_ch_process()
-//{
-//}
 
 int main ( void )
 {
@@ -133,12 +138,11 @@ int main ( void )
     while((pid = waitpid(-1, &status, WNOHANG))>0)
     {
       if (WIFSIGNALED(status)) {
-        printf("killed by signal %d\n", WTERMSIG(status));
+        printf("The process was killed by signal %d\n", WTERMSIG(status));
       }
       else
       {
-        printf ("\nChild is DONE");
-        printf("[proc %d exited with code %d]\n", pid, WEXITSTATUS(status));
+        printf ("\nChild process %d is now terminated", pid);
         bgj_counter--;
       }
 
@@ -152,8 +156,15 @@ int main ( void )
 
     //prompt - get user's input
     char *cmd = get_cmd();
-    printf ("Got: [%s]\n", cmd);
-
+    while(strcmp(cmd, "")==0)
+    {
+      printf("No command was entered\n");
+      cmd = get_cmd();
+    }
+    //if(strcpy(cmd, "")==0)
+    //{
+    //  printf(":(!!!!!!!");
+    //}
     char** args = calloc(100, sizeof(char*));
     parseInputString(cmd, args, " \n");
 
