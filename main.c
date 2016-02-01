@@ -92,7 +92,7 @@ int kill_bg(struct Bg_job *jobs_list, char args, int bgj_counter)
   }
   else if(ret==-1)
   {
-    printf("Error: the process could not be terminated\n");
+    printf("Error: the process %d could not be terminated\n", kill_id);
   }
   return bgj_counter;
 }
@@ -101,16 +101,24 @@ void stop_bg(struct Bg_job *jobs_list, char args)
 {
   int job_id = atoi(&args);
   int job_pid = jobs_list[job_id].pid;
-  int ret = kill(job_pid, SIGSTOP);
 
-  if(ret==0)
+  if(strcmp(jobs_list[job_id].status, "S") == 0)
   {
-    jobs_list[job_id].status= "S";
-    printf("\nProcess %d\n was stopped\n", job_id);
+    printf("Error: process %d has been alsready stopped\n", job_id);
   }
   else
   {
-    printf("\nError: process %d\n could not be stopped\n", job_id);
+    int ret = kill(job_pid, SIGSTOP);
+
+    if(ret==0)
+    {
+      jobs_list[job_id].status= "S";
+      printf("Process %d was stopped\n", job_id);
+    }
+    else
+    {
+      printf("Error: process %d could not be stopped\n", job_id);
+    }
   }
 }
 
@@ -118,16 +126,24 @@ void start_bg(struct Bg_job *jobs_list, char args)
 {
   int job_id = atoi(&args);
   int job_pid = jobs_list[job_id].pid;
-  int ret = kill(job_pid, SIGCONT);
 
-  if(ret==0)
+  if(strcmp(jobs_list[job_id].status, "R") == 0)
   {
-    jobs_list[job_id].status= "R";
-    printf("Process %d is now running\n", job_id);
+    printf("Error: process %d is currently running\n", job_id);
   }
   else
   {
-    printf("Error: process %d could not be resumed\n", job_id);
+    int ret = kill(job_pid, SIGCONT);
+
+    if(ret==0)
+    {
+      jobs_list[job_id].status= "R";
+      printf("Process %d is now running\n", job_id);
+    }
+    else
+    {
+      printf("Error: process %d could not be resumed\n", job_id);
+    }
   }
 }
 
@@ -210,7 +226,7 @@ int main ( void )
           else
           {
             execvp(args[0], args);
-            printf( "Child process could not do execvp\n");
+            printf( "Child process could not do execute\n");
             exit(1);
           }
         } else 
@@ -235,13 +251,13 @@ int main ( void )
               bgj_counter++;
             } else
             {
-              printf("\nSoryy, you can not run more than 5 jobs on the background..");
+              printf("\nSorry, you can not run more than 5 jobs on the background..\n");
               //kill the 6th job
               kill(ch_pid, SIGSTOP);
             }
           } else
           {
-            printf("[proc %d started]\n", pid);
+            printf("Process %d started\n", pid);
             waitpid(ch_pid, NULL, 0);
           }
         }
