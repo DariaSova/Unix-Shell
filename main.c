@@ -151,7 +151,7 @@ int main ( void )
       }
       else
       {
-        printf ("\nChild process %d is now terminated", pid);
+        printf ("\nChild process %d is now terminated\n", pid);
         bgj_counter--;
       }
 
@@ -236,8 +236,8 @@ int main ( void )
             } else
             {
               printf("\nSoryy, you can not run more than 5 jobs on the background..");
-              //run the 6th on the fg
-              waitpid(pid, NULL, 0);
+              //kill the 6th job
+              kill(ch_pid, SIGSTOP);
             }
           } else
           {
