@@ -19,6 +19,16 @@ struct Bg_job
 typedef struct Bg_job BG_JOB;
 int MAX_JOBS_NUMBER=5;
 
+void freeStruct (struct Bg_job *list)
+{
+  for(int i=0 ; i<MAX_JOBS_NUMBER; i++ )
+  {
+    free(list[i].status);
+    free(list[i].command);
+  }
+  free(list);
+}
+
 int parseInputString(char *inputString, char **args, char* delimiter)
 {
   int i =0;
@@ -30,6 +40,7 @@ int parseInputString(char *inputString, char **args, char* delimiter)
     i++;
     token = strtok(NULL, delimiter);
   }
+  free(token);
   return i-1;
 }
 
@@ -55,6 +66,7 @@ char* get_cmd()
   char *buf=0;
   char *data = getcwd(buf, 256);
   strcat(data,":shell>>");
+  free(buf);
   return readline (data);
 }
 
@@ -244,7 +256,6 @@ int main ( void )
               //allocate when initialize
               jobs_list[i].command = calloc(100, sizeof(char*));
               //find an empty slot in the array
-              //jobs_list[bgj_counter].terminated=0;
               jobs_list[i].pid = ch_pid;
               jobs_list[i].status = "R";
               strcpy(jobs_list[i].command, args[1]);
@@ -257,7 +268,7 @@ int main ( void )
             }
           } else
           {
-            printf("Process %d started\n", pid);
+            printf("Process with pid %d started\n", pid);
             waitpid(ch_pid, NULL, 0);
           }
         }
@@ -270,5 +281,5 @@ int main ( void )
     free (cmd);
     free (args);
   }
-  free(jobs_list);
+  freeStruct(jobs_list);
 }
