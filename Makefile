@@ -1,12 +1,11 @@
-CFLAGS = -Wall -g  
-LDFLAGS =  
+CFLAGS = -Wall -g -std=c99
+LDFLAGS = -lreadline
 
 OBJS = main.o
 
-all: a1 
+all: shell
 
-a1: $(OBJS)
-	$(CC) $(CFLAGS) -o a1 $(OBJS) $(LDFLAGS) -lreadline -lhistory -ltermcap
-
+shell: $(OBJS)
+	$(CC) $(CFLAGS) -o shell $(OBJS) $(LDFLAGS)
 clean: 
-	rm -rf $(OBJS) a1 
+	rm -rf $(OBJS) shell
