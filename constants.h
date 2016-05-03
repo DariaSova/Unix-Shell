@@ -1,0 +1,1 @@
+int MAX_JOBS_NUMBER=5;

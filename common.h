@@ -1,13 +1,3 @@
-struct Bg_job
-{
-  int pid;
-  char *status;
-  char *command;
-};
-
-typedef struct Bg_job BG_JOB;
-int MAX_JOBS_NUMBER=5;
-
 void freeStruct (struct Bg_job *list)
 {
   for(int i=0 ; i<MAX_JOBS_NUMBER; i++ )
@@ -40,4 +30,21 @@ char* get_cmd()
   strcat(data,":shell>>");
   free(buf);
   return readline (data);
+}
+
+void change_dir(char **args, int params)
+{
+  int ret = -1;
+  if(params==0 || strcmp(args[1],"~")==0)
+  {
+    ret = chdir(getenv("HOME"));
+  }
+  else
+  {
+    ret = chdir(args[1]);
+  }
+  if(ret==-1)
+  {
+    printf ("Sorry, directory [%s] does not exist\n", args[1] );
+  }
 }
