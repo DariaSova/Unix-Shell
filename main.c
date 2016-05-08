@@ -1,16 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <signal.h>
-#include "constants.h"
-#include "bg_job.h"
-#include "common.h"
-#include "parent_process.h"
+#include "headers.h"
 
 int main ( void )
 {
