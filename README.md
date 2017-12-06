@@ -1,4 +1,4 @@
-##Basic Shell implementation in C
+## Basic Shell implementation in C
 
 * Executes arbitrary commands like `ls`, `ls -a -l`, `pwd`, etc
 * Allows switching bettwen directories using `cd` and adding/deleting files
